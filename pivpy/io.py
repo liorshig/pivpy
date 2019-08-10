@@ -367,6 +367,65 @@ def load_vc7(path,time=0):
     ReadIM.DestroyAttributeListSafe(vatts)
     del(vatts)
     return data
+
+def ReadTxt(filename):
+    '''
+    loads txt file format from DAVIS software
+    intended for averaged and statistics files post processed
+    by davis imported in ASCII format
+    input: filename e.g 
+    path='C:\\Users\\lior\\Dropbox\\Lior\\first_cell\\Plane1\\Plane1_00_lior_mask_2_64X64_50_1_32X32_50=unknown_AvgVx_AvgVy_AvgV_StdevVx_StdevVy_StdevV_Rxy_Rxx_Ryy_AKE_TKE_TSS'
+    filename=path+'/B00001.txt'
+    output:u dataarray u(x,y)
+    '''
+    file=open(filename,'r')
+    calibration=file.readline()
+    calibration=calibration.split()
+    nx=int(calibration[3])
+    ny=int(calibration[4])
+    scaleX=float(calibration[6])
+    offsetX=float(calibration[7])
+    scaleY=float(calibration[10])
+    offsetY=float(calibration[11])
+    baseRangeX=np.arange(nx)
+    baseRangeY=np.arange(ny)
+    x=baseRangeX*scaleX+offsetX
+    y=baseRangeY*scaleY+offsetY
+    u=np.ones((nx,ny))
+    for i,f in enumerate(file):
+        f = f.replace(',', '.')
+        f=f.split('\t')
+        f=[float(x) for x in f]
+        f=np.array(f)
+        u[:,i]=u[:,i]*f
+    file.close()
+    u = xr.DataArray(u,dims=('x','y'),coords={'x':x,'y':y})
+    return u
+def LoadAvgV(path,files='',loc=(0,0,0)):
+    '''
+    load averaged velocity components imported from davis 
+    the files should be in the path folder name B000**.txt
+    B00001.txt-U,B00002.txt-V,B00003.txt-SQRT(U**2+V**2),STDU,STDV,....
+    input:path to foder
+    files: file name 'plane01_00' 
+    loc:location of the measured plane
+    ouput dataset u(x,y,t),v(x,y,t)
+    '''
+    filenameU=path+'/B00001.txt'
+    filenameV=path+'/B00002.txt'
+    u=ReadTxt(filenameU)
+    v=ReadTxt(filenameV)
+    data = xr.Dataset({'u': u, 'v': v})
+    data.attrs['variables'] = ['x','y','u','v']
+    data.attrs['units'] = ['mm','mm','m/s','m/s']  
+    data.attrs['dt'] = 1.0
+    data.attrs['files'] = files
+    data.attrs['loc']=loc
+    return data
+
+#path='C:\\Users\\lior\\Dropbox\\Lior\\first_cell\\Plane1\\Plane1_00_lior_mask_2_64X64_50_1_32X32_50=unknown_AvgVx_AvgVy_AvgV_StdevVx_StdevVy_StdevV_Rxy_Rxx_Ryy_AKE_TKE_TSS'
+#filename=path+'/B00001.txt'
+#data=LoadAvgV(path)
 #path='C:\\Users\\lior\\Documents\\ibrrTau\\plane1_00'
 #files=[f for f in os.listdir(path) if f.endswith('.vc7')]
 #data=[]
