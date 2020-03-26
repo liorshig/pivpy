@@ -136,7 +136,7 @@ def load_vec(filename, rows=None, cols=None, variables=None, units=None, dt=None
     
     return data
 
-def load_directory(path,basename='*',ext='.vec'):
+def load_directory(path,basename='*',ext='.vec',interp=True):
     """ 
     load_directory (path,basename='*', ext='*.vec')
 
@@ -176,7 +176,7 @@ def load_directory(path,basename='*',ext='.vec'):
                 time=int(f[-9:-4])-1
             else:
                 time=i
-            data.append(load_vc7(f,time))
+            data.append(load_vc7(f,time,interp=interp))
         if len(data) > 0:
             combined = xr.concat(data, dim='t')
             combined.attrs = data[-1].attrs
@@ -269,8 +269,9 @@ def get_units(filename):
 
 
 
-def load_vc7(path,time=0):
+def load_vc7(path,time=0,interp=True):
     """
+    interp:true if you would like to include interpolated values false for not
     input path for files format from davis tested for im7&vc7
     out put [X Y U V mask]
     valid only for 2d piv cases
@@ -343,7 +344,7 @@ def load_vc7(path,time=0):
                 lhs3[mask] = dat[mask]
                 dat = v_array[2*i+2,:,:]
                 lhs4[mask] = dat[mask]		
-            else:    # get interpolated vectors
+            elif interp:    # get interpolated vectors
                 dat =v_array[7,:,:] 
                 lhs3[mask] = dat[mask]
                 dat =v_array[8,:,:] 
@@ -421,12 +422,12 @@ def load_txt(filename, rows=None, cols=None, variables=None, units=None, dt=None
     data.attrs['files'] = filename
     
     return data
-#path='C:\\Users\\lior\\Documents\\ibrrTau\\plane1_00'
+path='F:\PIV_PAZY_3\Plane3_08\lior_mask_2_64X64_50%_1_32X32_50%'
 #files=[f for f in os.listdir(path) if f.endswith('.vc7')]
 #data=[]
 #data.append(load_vc7(path+'\\'+files[-1],1))
 #data.append(load_vc7(path+'\\'+files[-2],2))
 #combined = xr.concat(data, dim='t')
 #combined.attrs=data[0].attrs
-
+data=load_directory(path,ext='.vc7',interp=False)
 
